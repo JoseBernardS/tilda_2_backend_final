@@ -1,6 +1,6 @@
 import itemModel from "../models/itemModel.js";
 import fs from "fs";
-
+import algoliasearch from "algoliasearch";
 
 // add item
 export const addItem = async (req, res) => {
