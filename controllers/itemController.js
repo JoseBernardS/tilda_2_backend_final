@@ -81,7 +81,7 @@ export const updateItem = async (req, res) => {
         res.json({ success: true, message: "Item updated successfully" });
     } catch (error) {
         console.error("Error updating item:", error);
-        res.status(500).json({ success: false, message: "Item could not be updated" });
+        res.json({ success: false, message: "Item could not be updated" });
     }
 };
 
@@ -101,13 +101,23 @@ export const search_item = async (req, res) => {
         process.env.APPID,
         process.env.WRITEAPI
       );
-  
+      
       const index = client.initIndex("tilda_items");
+      await index.clearObjects();
   
       await index.saveObjects(records, { autoGenerateObjectIDIfNotExist: true });
   
       res.json({ success: true, message: "Items successfully indexed in Algolia" });
     } catch (error) {
-      res.status(500).json({ success: false, message: "Items could not be searched", error: error.message });
+      res.json({ success: false, message: "Items could not be searched", error: error.message });
     }
   };
+
+  export const top_items = async (req, res) => {
+    try {
+      const items = await itemModel.find({}).sort({ rank: -1}).limit(5);
+      res.json({ success: true, data: items });
+    } catch (error) {
+      res.json({ success: false, message: "Top items could not be fetched", error: error.message });
+    }
+  }

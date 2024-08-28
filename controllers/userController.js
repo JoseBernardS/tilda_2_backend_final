@@ -85,7 +85,7 @@ const forgotPassword = async (req, res) => {
             from: process.env.EMAIL,
             to:  email,
             subject: 'Reset Password Link',
-            text: `${process.env.FRONTEND_URL}reset_password/${user._id}/${token}` 
+            text: `Click this link with the next hour to reset your password => ${process.env.FRONTEND_URL}reset_password/${user._id}/${token} ` 
           };
           
           transporter.sendMail(mailOptions, function(error, info){
@@ -96,7 +96,7 @@ const forgotPassword = async (req, res) => {
             }
           });
 
-        //send email to user with password reset link
+        
     }catch(error){
         res.json({success:false,message:"Email could not be sent"})
     }

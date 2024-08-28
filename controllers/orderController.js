@@ -1,8 +1,7 @@
 import orderModel from "../models/orderModel.js";
-import userModel from "../models/userModel.js";
 import itemModel from "../models/itemModel.js";
 import Stripe from "stripe";
-import { use } from "bcrypt/promises.js";
+
 
 const stripe = new Stripe(process.env.STRIPE_SECRET);
 // placing user order for frontend
@@ -12,7 +11,9 @@ const placeOrder = async (req, res) => {
             userId: req.body.userId,
             items: req.body.items,
             amount: req.body.amount,
-            address: req.body.address
+            address: req.body.address,
+            
+            date: Date.now(),
         });
         await newOrder.save();
 
@@ -107,7 +108,19 @@ const updateStatus = async (req, res) => {
     
 }
 
+const getAddress = async (req, res) => {
+    const {userId} = req.body;
+    try{
+        const user = await orderModel.findOne({userId : userId});
+        res.json({success:true,data:user.address})}
+        
+        
+        catch(error){
+            res.json({success:false,message:"Address could not be fetched"})
+        }
+    }
 
 
 
-export {placeOrder,verifyOrder,userOrders,getOrders,updateStatus}
+
+export {placeOrder,verifyOrder,userOrders,getOrders,updateStatus,getAddress}
