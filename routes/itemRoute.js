@@ -5,7 +5,7 @@ import multer from 'multer';
 const itemRouter = express.Router();
 //image Storage engine
 const storage = multer.diskStorage({
-    destination:"uploads",
+    destination:"/mnt/data/uploads",
     filename:(req,file,cb)=>{
         cb(null,`${Date.now()}_${file.originalname}`)
     }
