@@ -38,7 +38,7 @@ try{
 export const removeItem = async (req, res) => {
     try {
         const item = await itemModel.findById(req.body.id);
-        fs.unlink(`uploads/${item.image}`,()=>{});
+        fs.unlink(`mnt/data/uploads/${item.image}`,()=>{});
 
         await itemModel.findByIdAndDelete(req.body.id);
         res.json({ success: true, message: "Item deleted successfully" });
@@ -67,7 +67,7 @@ export const updateItem = async (req, res) => {
         if (req.file) {
             
             if (item.image) {
-                fs.unlink(`uploads/${item.image}`, (err) => {
+                fs.unlink(`mnt/data/uploads/${item.image}`, (err) => {
                     if (err) console.error("Failed to delete old image:", err);
                 });
             }
