@@ -19,7 +19,7 @@ app.use(cors());
 connectDB();
 //api endpoints
 app.use("/api/item",itemRouter);
-app.use("/images",express.static("mnt/data/uploads/"));
+app.use("/images",express.static("/mnt/data/uploads/"));
 app.use("/api/user",userRouter);
 app.use("/api/cart",cartRouter);
 app.use("/api/order",orderRouter);
