@@ -12,7 +12,7 @@ const itemSchema = new mongoose.Schema({
     search_description: {
         type:String,
         required: true
-    }
+    },
     category: {
         type: String,
         required: true
