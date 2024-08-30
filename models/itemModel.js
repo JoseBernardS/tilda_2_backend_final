@@ -9,6 +9,10 @@ const itemSchema = new mongoose.Schema({
         type: String,
         
     },
+    search_description: {
+        type:String,
+        required: true
+    }
     category: {
         type: String,
         required: true
