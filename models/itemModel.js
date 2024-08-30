@@ -9,7 +9,7 @@ const itemSchema = new mongoose.Schema({
         type: String,
         
     },
-    search_description: {
+    search_text: {
         type:String,
         required: true
     },
