@@ -8,6 +8,7 @@ export const addItem = async (req, res) => {
     const item  = new itemModel({
         name: req.body.name,
         description: req.body.description,
+        search_text: req.body.search_text,
         category: req.body.category,
         price: req.body.price,
         image: image_filename,
@@ -59,6 +60,7 @@ export const updateItem = async (req, res) => {
         
         item.name = req.body.name || item.name;
         item.description = req.body.description || item.description;
+        item.search_text = req.body.search_text || item.search_text;
         item.category = req.body.category || item.category;
         item.price = req.body.price || item.price;
         item.quantity = req.body.quantity || item.quantity;
