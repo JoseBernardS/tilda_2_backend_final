@@ -132,4 +132,3 @@ export {
 
 
 
-export {placeOrder,verifyOrder,userOrders,getOrders,updateStatus,getAddress}
