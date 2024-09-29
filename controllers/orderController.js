@@ -2,21 +2,10 @@ import orderModel from "../models/orderModel.js";
 import itemModel from "../models/itemModel.js";
 import Stripe from "stripe";
 
-
 const stripe = new Stripe(process.env.STRIPE_SECRET);
-// placing user order for frontend
-const placeOrder = async (req, res) => {
-    try{
-        const newOrder = new orderModel({
-            userId: req.body.userId,
-            items: req.body.items,
-            amount: req.body.amount,
-            address: req.body.address,
-            
-            date: Date.now(),
-        });
-        await newOrder.save();
 
+const initiateCheckout = async (req, res) => {
+    try {
         const line_items = req.body.items.map(item => ({
             price_data: {
                 currency: 'usd',
@@ -26,7 +15,8 @@ const placeOrder = async (req, res) => {
                 unit_amount: item.price * 100
             },
             quantity: item.quantity
-        }))
+        }));
+
         line_items.push({
             price_data: {
                 currency: 'usd',
@@ -36,90 +26,109 @@ const placeOrder = async (req, res) => {
                 unit_amount: 500
             },
             quantity: 1
-        })
+        });
+
         const session = await stripe.checkout.sessions.create({
             payment_method_types: ['card'],
-            line_items:line_items,
+            line_items: line_items,
             mode: 'payment',
-            success_url: `${process.env.FRONTEND_URL}verify?success=true&orderId=${newOrder._id}`,
-            cancel_url: `${process.env.FRONTEND_URL}verify?success=false&orderId=${newOrder._id}`,
-        })
-
-        res.json({success:true,session_url:session.url})
-    }catch(error){
-        console.log(error);
-        res.json({success:false,message:"Order could not be placed"})
-    }
-}
-
-const verifyOrder = async (req, res) => { 
-    const {orderId,success} = req.body;
-    try{
-        if(success==="true"){
-            await orderModel.findByIdAndUpdate(orderId,{payment:true});
-            for(let item of (await orderModel.findById(orderId)).items){
-                await itemModel.findByIdAndUpdate(item._id,{$inc:{quantity:-item.quantity}});
-                await itemModel.findByIdAndUpdate(item._id,{$inc:{rank:1*item.quantity}});
+            success_url: `${process.env.FRONTEND_URL}/verify?success=true`,
+            cancel_url: `${process.env.FRONTEND_URL}/verify?success=false`,
+            metadata: {
+                userId: req.user.id,
+                address: JSON.stringify(req.body.address),
+                items: JSON.stringify(req.body.items),
+                amount: req.body.amount
             }
-            
-            res.json({success:true,message:"Paid"})
-            
-    }
-    else{
-        await orderModel.findByIdAndDelete(orderId);
-        res.json({success:false,message:"Not Paid"})
-    }
-}catch(error){
-    console.log(error);
-    res.json({success:false,message:"Order could not be verified"})
-}}
+        });
 
-//user orders for frontend
-
-const userOrders = async (req, res) => {
-    try{
-    const orders = await orderModel.find({userId:req.body.userId})
-    res.json({success:true,data:orders})
-}catch(error){
-    res.json({success:false,message:"Orders could not be fetched"})
-}
-}
-//list orders for admin
-const getOrders = async (req, res) => {
-    try{
-        const orders = await orderModel.find({})
-        res.json({success:true,data:orders})
-    }catch(error){
-        res.json({success:false,message:"Orders could not be fetched"})
+        res.json({success: true, session_url: session.url});
+    } catch(error) {
+        console.log(error);
+        res.status(500).json({success: false, message: "Checkout session could not be created"});
     }
-}
-   
-//update status
+};
 
-const updateStatus = async (req, res) => {
-    try{
-        await orderModel.findByIdAndUpdate(req.body.orderId,{status:req.body.status})
-        res.json({success:true,message:"Status updated"})
+const handleWebhook = async (req, res) => {
+    const sig = req.headers['stripe-signature'];
+    let event;
+
+    try {
+        event = stripe.webhooks.constructEvent(req.body, sig, process.env.STRIPE_WEBHOOK_SECRET);
+    } catch (err) {
+        return res.status(400).send(`Webhook Error: ${err.message}`);
     }
-    catch(error){
-        res.json({success:false,message:"Status could not be updated"})
 
-    }
-    
-}
-
-const getAddress = async (req, res) => {
-    const {userId} = req.body;
-    try{
-        const user = await orderModel.findOne({userId : userId});
-        res.json({success:true,data:user.address})}
+    if (event.type === 'checkout.session.completed') {
+        const session = event.data.object;
         
-        
-        catch(error){
-            res.json({success:false,message:"Address could not be fetched"})
+        const newOrder = new orderModel({
+            userId: session.metadata.userId,
+            items: JSON.parse(session.metadata.items),
+            amount: session.metadata.amount,
+            address: JSON.parse(session.metadata.address),
+            payment: true,
+            date: Date.now(),
+        });
+        await newOrder.save();
+
+        for (let item of newOrder.items) {
+            await itemModel.findByIdAndUpdate(item._id, {
+                $inc: {
+                    quantity: -item.quantity,
+                    rank: 1 * item.quantity
+                }
+            });
         }
     }
 
+    res.json({received: true});
+};
+
+const userOrders = async (req, res) => {
+    try {
+        const orders = await orderModel.find({userId: req.user.id});
+        res.json({success: true, data: orders});
+    } catch(error) {
+        res.status(500).json({success: false, message: "Orders could not be fetched"});
+    }
+};
+
+const getOrders = async (req, res) => {
+    try {
+        const orders = await orderModel.find({});
+        res.json({success: true, data: orders});
+    } catch(error) {
+        res.status(500).json({success: false, message: "Orders could not be fetched"});
+    }
+};
+
+const updateStatus = async (req, res) => {
+    try {
+        await orderModel.findByIdAndUpdate(req.body.orderId, {status: req.body.status});
+        res.json({success: true, message: "Status updated"});
+    } catch(error) {
+        res.status(500).json({success: false, message: "Status could not be updated"});
+    }
+};
+
+const getAddress = async (req, res) => {
+    try {
+        const user = await orderModel.findOne({userId: req.user.id});
+        res.json({success: true, data: user ? user.address : null});
+    } catch(error) {
+        res.status(500).json({success: false, message: "Address could not be fetched"});
+    }
+};
+
+export {
+    initiateCheckout,
+    handleWebhook,
+    userOrders,
+    getOrders,
+    updateStatus,
+    getAddress
+};
 
 
 
