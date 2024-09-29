@@ -87,7 +87,7 @@ const handleWebhook = async (req, res) => {
 
 const userOrders = async (req, res) => {
     try {
-        const orders = await orderModel.find({userId: req.user.id});
+        const orders = await orderModel.find({userId: req.body.userId});
         res.json({success: true, data: orders});
     } catch(error) {
         res.status(500).json({success: false, message: "Orders could not be fetched"});
@@ -114,7 +114,7 @@ const updateStatus = async (req, res) => {
 
 const getAddress = async (req, res) => {
     try {
-        const user = await orderModel.findOne({userId: req.user.id});
+        const user = await orderModel.findOne({userId:  req.body.userId});
         res.json({success: true, data: user ? user.address : null});
     } catch(error) {
         res.status(500).json({success: false, message: "Address could not be fetched"});
