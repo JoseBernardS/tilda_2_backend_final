@@ -15,8 +15,7 @@ const initiateCheckout = async (req, res) => {
                 unit_amount: item.price * 100
             },
             quantity: item.quantity
-        }));
-
+        }))
         line_items.push({
             price_data: {
                 currency: 'usd',
@@ -26,26 +25,19 @@ const initiateCheckout = async (req, res) => {
                 unit_amount: 500
             },
             quantity: 1
-        });
-
+        })
         const session = await stripe.checkout.sessions.create({
             payment_method_types: ['card'],
-            line_items: line_items,
+            line_items:line_items,
             mode: 'payment',
-            success_url: `${process.env.FRONTEND_URL}/verify?success=true`,
-            cancel_url: `${process.env.FRONTEND_URL}/verify?success=false`,
-            metadata: {
-                userId: req.user.id,
-                address: JSON.stringify(req.body.address),
-                items: JSON.stringify(req.body.items),
-                amount: req.body.amount
-            }
-        });
+            success_url: `${process.env.FRONTEND_URL}verify?success=true&orderId=${newOrder._id}`,
+            cancel_url: `${process.env.FRONTEND_URL}verify?success=false&orderId=${newOrder._id}`,
+        })
 
-        res.json({success: true, session_url: session.url});
-    } catch(error) {
+        res.json({success:true,session_url:session.url})
+    }catch(error){
         console.log(error);
-        res.status(500).json({success: false, message: "Checkout session could not be created"});
+        res.json({success:false,message:"Order could not be placed"})
     }
 };
 
