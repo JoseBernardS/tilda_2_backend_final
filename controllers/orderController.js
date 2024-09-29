@@ -30,8 +30,8 @@ const initiateCheckout = async (req, res) => {
             payment_method_types: ['card'],
             line_items:line_items,
             mode: 'payment',
-            success_url: `${process.env.FRONTEND_URL}verify?success=true&orderId=${newOrder._id}`,
-            cancel_url: `${process.env.FRONTEND_URL}verify?success=false&orderId=${newOrder._id}`,
+            success_url: `${process.env.FRONTEND_URL}verify?success=true`,
+            cancel_url: `${process.env.FRONTEND_URL}verify?success=false`,
         })
 
         res.json({success:true,session_url:session.url})
